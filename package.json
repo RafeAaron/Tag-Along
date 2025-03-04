@@ -1,0 +1,27 @@
+{
+  "name": "tagalong",
+  "version": "1.0.0",
+  "description": "A dynamic ride sharing service for urban densely populated areas",
+  "main": "main/index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "keywords": [
+    "Dynamic",
+    "Ride",
+    "Sharing",
+    "Service"
+  ],
+  "author": [
+    "Rafe Aaron",
+    "Asiimwe Edrine",
+    "Mwebya Elvis",
+    "Nantumbwe Prossy"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "mysql": "^2.18.1",
+    "mysql2": "^3.12.0",
+    "nodemailer": "^6.10.0"
+  }
+}
