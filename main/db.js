@@ -24,6 +24,42 @@ async function addUser(dbConnection, username, password, first_name, last_name, 
 
 }
 
+async function retrieveResetCode(dbConnection, IdCode)
+{
+
+    console.log(IdCode);
+    return new Promise((resolve, reject) =>{
+        dbConnection.query(`SELECT resetCode FROM resetPasswordCodes WHERE userID = ?`, [IdCode], (err, result) => {
+            if(err)
+            {
+                reject(err);
+            }
+            else{
+                resolve(result);
+            }
+        })
+    })
+
+}
+
+async function getID(dbConnection, emailAddress)
+{
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT id FROM User WHERE email = ?`, [emailAddress], (err, result) => {
+
+            if(err)
+            {
+                reject(err);
+            }
+            else{
+                resolve(result);
+            }
+        })
+
+    });
+}
+
 async function getUser(dbConnection, username, password)
 {
 
@@ -41,6 +77,24 @@ async function getUser(dbConnection, username, password)
         })
     })
     
+}
+
+async function createResetCode(dbConnection, id)
+{
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`INSERT INTO resetPasswordCodes(id, resetCode, userID) VALUES(0, ?, ?)`, [(Math.random() * 1000000) | 0, id], (err, result) => {
+
+            if(err)
+            {
+                reject(false);
+            }
+            else
+            {
+                resolve(true)
+            }
+
+        });
+    });
 }
 
 async function changePassword(dbConnection, id, newPassword)
@@ -91,4 +145,4 @@ async function closeConnection(databaseConnection)
 
 }
 
-module.exports = {createConnection, closeConnection, addUser, changePassword, getUser};
+module.exports = {createConnection, closeConnection, addUser, changePassword, getUser, createResetCode, getID, retrieveResetCode};

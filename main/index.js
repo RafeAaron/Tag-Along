@@ -1,7 +1,8 @@
 import {createServer} from "http";
-import { createConnection, addUser, closeConnection } from "./db.js";
-import {welcomeUser, getUserInformation} from "./getRequests.js";
+import { createConnection, addUser, closeConnection, getID } from "./db.js";
+import {welcomeUser, getUserInformation, createCodeForReset, getResetCode} from "./getRequests.js";
 import {addUserToDatabase, updateUserPassword} from "./postRequests.js";
+import { sendResetCode } from "./email.js";
 
 var databaseConnection = await createConnection();
 
@@ -13,6 +14,33 @@ var server = createServer( async (req, res) => {
         {
             welcomeUser(res);
             break;
+        }
+
+        case "/getResetCode":
+        {
+            var info = await getData(req);
+            console.log(info);
+
+            if(!("emailAddress" in info))
+            {
+                res.write(JSON.stringify({"message": "Please provide an email address with the API."}))
+                res.end();
+                return;
+            }
+
+            var userID = await getID(databaseConnection, info.emailAddress)
+
+            if(userID.length == 0)
+            {
+                res.write(JSON.stringify({"message": "No User registered with this email"}))
+                res.end();
+            }else{
+
+                var message = await getResetCode(databaseConnection, userID[0].id)
+
+                res.write(message);
+                res.end();
+            }
         }
 
         case "/getUser":
@@ -38,6 +66,25 @@ var server = createServer( async (req, res) => {
             res.end();
         }
 
+        case "/createResetCode":
+        {
+            var info = await getData(req);
+            console.log(info);
+
+            if(!("emailAddress" in info))
+            {
+                console.log("Error")
+                res.write(JSON.stringify({"message": "Please provide an email address"}));
+                res.end();
+            }else{
+                var message = await createCodeForReset(databaseConnection, info.emailAddress);
+                console.log(message)
+                res.write(message);
+                res.end();
+            }
+
+        }
+
         case "/addUser":
         {
             var info = await getData(req);
@@ -61,7 +108,13 @@ async function getData(req){
 
         req.on('end', ()=>{
             console.log("Data stream ended")
-            resolve(JSON.parse(message));
+
+            if(message != ""){
+                resolve(JSON.parse(message));
+            }
+            else{
+                resolve({})
+            }
         })
     })
 

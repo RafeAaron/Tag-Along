@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS User(
 );
 
 INSERT INTO User VALUES(0, "rafeaaron21@gmail.com", "Rafe", "Aaron", "@rafeaaron23", "Arthur@2025");
+INSERT INTO User VALUES(0, "michealronny@gmail.com", "Micheal", "Ronny", "@michealRonny", "michealRonny2024");
 
 CREATE TABLE IF NOT EXISTS resetPasswordCodes(
     id int PRIMARY KEY AUTO_INCREMENT,
@@ -26,3 +27,34 @@ CREATE TABLE IF NOT EXISTS resetPasswordCodes(
 );
 
 INSERT INTO resetPasswordCodes VALUES(0, "2437835", 1);
+
+CREATE TABLE IF NOT EXISTS payments(
+    paymentID int PRIMARY KEY AUTO_INCREMENT,
+    senderID int,
+    recieverID int,
+    amount int,
+    reason varchar(60),
+    paymentStatus varchar(15),
+    dateCompleted varchar(20),
+    FOREIGN KEY(senderID)
+    REFERENCES User(id),
+    FOREIGN KEY(recieverID)
+    REFERENCES User(id)
+);
+
+INSERT INTO payments VALUES(0, 1, 2, 200, "Transport Fee", "Initiated", "2024-10-5");
+
+CREATE TABLE IF NOT EXISTS accounts(
+
+    accountID int PRIMARY KEY AUTO_INCREMENT,
+    userID int,
+    amount int,
+    dateCreated varchar(20),
+    dateUpdated varchar(20),
+
+    FOREIGN KEY(userID)
+    REFERENCES User(id)
+
+);
+
+INSERT INTO accounts VALUES(0, 1, 400, "2024-10-5", "2025-01-23");
