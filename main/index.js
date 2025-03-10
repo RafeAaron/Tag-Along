@@ -1,7 +1,7 @@
 import {createServer} from "http";
-import { createConnection, addUser, closeConnection, getID } from "./db.js";
+import { createConnection, addUser, closeConnection, getID, getIDFromUsername } from "./db.js";
 import {welcomeUser, getUserInformation, createCodeForReset, getResetCode} from "./getRequests.js";
-import {addUserToDatabase, updateUserPassword} from "./postRequests.js";
+import {addUserToDatabase, updateUserPassword, initialisePayment} from "./postRequests.js";
 import { sendResetCode } from "./email.js";
 
 var databaseConnection = await createConnection();
@@ -14,6 +14,69 @@ var server = createServer( async (req, res) => {
         {
             welcomeUser(res);
             break;
+        }
+
+        case "/initialisePayment":
+        {
+            var info = await getData(req);
+            console.log(info);
+
+            if(!("sender_user_name" in info))
+            {
+                res.write(JSON.stringify({"message": "Please provide a value for the senderUserName"}))
+                res.end();
+                return;
+            }
+
+            if(!("reciever_user_name" in info))
+            {
+                res.write(JSON.stringify({"message": "Please provide a value for the recieverUserName"}))
+                res.end();
+                return;
+            }
+
+            var senderID = await getIDFromUsername(databaseConnection, info.sender_user_name);
+            var recieverID = await getIDFromUsername(databaseConnection, info.reciever_user_name);
+
+            console.log(senderID);
+            console.log(recieverID);
+
+            if(senderID.length == 0)
+            {
+                res.write(JSON.stringify({"message": "Sender Not Registered in this system"}));
+                res.end();
+                break;
+            }
+
+            if(recieverID.length == 0)
+            {
+                res.write(JSON.stringify({"message": "Reciever Not Registered in the system"}));
+                res.end();
+                break;
+            }
+
+            if(!("amount" in info))
+            {
+                res.write(JSON.stringify({"message": "Please specify an amount"}));
+                res.end();
+                break;
+            }
+
+            console.log(info.amount);
+
+            if(!("reason" in info))
+            {
+                res.write(JSON.stringify({"message": "Reason not present"}));
+                res.end();
+                break;
+            }
+
+            console.log(info.reason);
+
+            var success = await initialisePayment(senderID[0].id, recieverID[0].id, databaseConnection, info.amount, info.reason);
+
+            res.write(success);
+            res.end();
         }
 
         case "/getResetCode":

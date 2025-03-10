@@ -42,6 +42,24 @@ async function retrieveResetCode(dbConnection, IdCode)
 
 }
 
+async function getIDFromUsername(dbConnection, userName)
+{
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT id FROM User WHERE user_name = ?`, [userName], (err, result) => {
+
+            if(err)
+            {
+                reject(err);
+            }
+            else{
+                resolve(result);
+            }
+        })
+
+    });
+}
+
 async function getID(dbConnection, emailAddress)
 {
     return new Promise((resolve, reject) => {
@@ -145,4 +163,4 @@ async function closeConnection(databaseConnection)
 
 }
 
-module.exports = {createConnection, closeConnection, addUser, changePassword, getUser, createResetCode, getID, retrieveResetCode};
+module.exports = {createConnection, closeConnection, addUser, changePassword, getUser, createResetCode, getID, retrieveResetCode, getIDFromUsername};

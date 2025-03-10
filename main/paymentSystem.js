@@ -1,12 +1,15 @@
 import { createConnection } from "./db.js"
 
-export function initiatePayment(senderID, recieverID, dbConnection, amount, reason, dateCompleted)
+export function initiatePayment(senderID, recieverID, dbConnection, amount, reason)
 {
+
+    let date = new Date();
+    var value = date.getFullYear() + "-" + Number(date.getMonth() + 1 ) + "-" + Number(date.getDate());
 
     return new Promise((resolve, reject) => {
 
 
-        dbConnection.query(`INSERT INTO payments VALUES(0, ?, ?, ?, ?, ?, ?)`, [senderID, recieverID, amount, reason, "Initiated", dateCompleted], (error, result, fields) => {
+        dbConnection.query(`INSERT INTO payments VALUES(0, ?, ?, ?, ?, ?, ?)`, [senderID, recieverID, amount, reason, "Initiated", value], (error, result, fields) => {
 
             if(error) reject(error);
 
@@ -56,5 +59,20 @@ export function availableUserFunds(userID, dbConnection)
             resolve(result)
         })
     })
+
+}
+
+export function updateUserFunds(userID, dbConnection, amount)
+{
+
+    let date = new Date();
+    var value = date.getFullYear() + "-" + Number(date.getMonth() + 1 ) + "-" + Number(date.getDate());
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE accounts SET amount = ? WHERE userID = ?`, [amount, userID], (err, result) => {
+            if(err) reject(err);
+            resolve(result);
+        });
+    });
 
 }

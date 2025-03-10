@@ -58,3 +58,4 @@ CREATE TABLE IF NOT EXISTS accounts(
 );
 
 INSERT INTO accounts VALUES(0, 1, 400, "2024-10-5", "2025-01-23");
+
