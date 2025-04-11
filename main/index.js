@@ -2,7 +2,7 @@ import {createServer} from "http";
 import { createConnection, addUser, closeConnection, getID, getIDFromUsername } from "./db.js";
 import {welcomeUser, getUserInformation, createCodeForReset, getResetCode} from "./getRequests.js";
 import {addUserToDatabase, updateUserPassword, initialisePayment} from "./postRequests.js";
-import { sendResetCode } from "./email.js";
+import { sendResetCode, sendWelcomeEmail } from "./email.js";
 
 var databaseConnection = await createConnection();
 
@@ -10,6 +10,32 @@ var server = createServer( async (req, res) => {
     
     switch(req.url)
     {
+
+        case "sendWelcomeEmail":
+        {
+
+            var info = await getData(req);
+            console.log(info);
+
+            if(!("user_email_address" in info))
+            {
+
+                res.write(JSON.stringify({"Message": "Please include user_email_address"}));
+                res.end();
+                break;
+
+            }
+
+            if(!("user_name" in info)){
+                res.write(JSON.stringify({"Message": "Please provide a user_name"}));
+                res.end();
+                break;
+            }
+
+            sendWelcomeEmail(info.user_email_address, user_name)
+            break;
+        }
+
         case "/": 
         {
             welcomeUser(res);
@@ -78,6 +104,8 @@ var server = createServer( async (req, res) => {
             res.write(success);
             res.end();
         }
+
+        
 
         case "/getResetCode":
         {
@@ -152,8 +180,48 @@ var server = createServer( async (req, res) => {
         {
             var info = await getData(req);
             console.log(info);
+
+            //console.log("Checking");
+
+            if(!("user_name" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a value for user_name"}));
+                console.log("Checking");
+                res.end();
+                break;
+            }
+
+            if(!("first_name" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a value for first_name"}));
+                res.end();
+                break;
+            }
+
+            if(!("last_name" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a value for last_name"}));
+                res.end();
+                break;
+            }
+    
+            if(!("email" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a value for email_name"}));
+                res.end();
+                break;
+            }
             
-            var message = await addUserToDatabase(databaseConnection, info.userName, info.firstName, info.lastName, info.email, info.password);
+            if(!("password" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a value for password"}));
+                res.end();
+                break;
+            }
+
+            var message = await addUserToDatabase(databaseConnection, info.user_name, info.first_name, info.last_name, info.email, info.password);
+
+            console.log(message);
             res.write(message);
             res.end();
         }

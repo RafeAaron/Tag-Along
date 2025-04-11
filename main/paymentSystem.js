@@ -38,7 +38,7 @@ export function addUserAccount(userID, amount, dbConnection)
 
 }
 
-export function getUserAmount(userID, dbConnection)
+export async function getUserAccountDetails(userID, dbConnection)
 {
 
     return new Promise((resolve, reject) => {
@@ -64,9 +64,6 @@ export function availableUserFunds(userID, dbConnection)
 
 export function updateUserFunds(userID, dbConnection, amount)
 {
-
-    let date = new Date();
-    var value = date.getFullYear() + "-" + Number(date.getMonth() + 1 ) + "-" + Number(date.getDate());
 
     return new Promise((resolve, reject) => {
         dbConnection.query(`UPDATE accounts SET amount = ? WHERE userID = ?`, [amount, userID], (err, result) => {

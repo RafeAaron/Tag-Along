@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS User(
 INSERT INTO User VALUES(0, "rafeaaron21@gmail.com", "Rafe", "Aaron", "@rafeaaron23", "Arthur@2025");
 INSERT INTO User VALUES(0, "michealronny@gmail.com", "Micheal", "Ronny", "@michealRonny", "michealRonny2024");
 
+
 CREATE TABLE IF NOT EXISTS resetPasswordCodes(
     id int PRIMARY KEY AUTO_INCREMENT,
     resetCode varchar(7),
