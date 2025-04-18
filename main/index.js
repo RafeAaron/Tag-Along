@@ -1,8 +1,22 @@
 import {createServer} from "http";
 import { createConnection, addUser, closeConnection, getID, getIDFromUsername } from "./db.js";
 import {welcomeUser, getUserInformation, createCodeForReset, getResetCode} from "./getRequests.js";
-import {addUserToDatabase, updateUserPassword, initialisePayment} from "./postRequests.js";
+import {addUserToDatabase, updateUserPassword, initialisePayment, addDriverRecord, addBooking_UnVerified} from "./postRequests.js";
 import { sendResetCode, sendWelcomeEmail } from "./email.js";
+
+/*
+    Finished apis
+        sendWelcomeEmail
+        getUser
+        initializePayment
+        /
+        getResetCode
+        getUser
+        updatePassword
+        createResetCode
+        addUser
+        sendResetCodeEmail
+*/
 
 var databaseConnection = await createConnection();
 
@@ -10,6 +24,97 @@ var server = createServer( async (req, res) => {
     
     switch(req.url)
     {
+
+        case "/advertiseBooking":
+        {
+            var info = await getData(req);
+            console.log(info);
+
+            //user_id, start_location, end_location, date, initial_amount, time
+
+            let neccessary_fields = ["user_id", "start_location", "end_location", "date", "initial_amount", "time"];
+            let missing_fields = [];
+            
+            for(let i = 0; i < neccessary_fields.length; i++)
+            {
+
+                if(!(neccessary_fields[i] in info))
+                {
+                    missing_fields.push(neccessary_fields[i]);
+                }
+            }
+
+            if(missing_fields.length != 0)
+            {
+                let message = "Please include: ";
+                for(let a = 0; a < missing_fields.length; a++)
+                {
+                    if(a == missing_fields.length - 1)
+                    {
+                        message +=missing_fields[a];
+                    }else{
+                        message += missing_fields[a] + ", ";
+                    }
+                }
+
+                res.write(message);
+                res.end();
+            }else{
+                
+                let message = await addBooking_UnVerified(databaseConnection, info.user_id, info.start_location, info.end_location, info.date, info.initial_amount, info.time)
+
+                res.write(message);
+                res.end();
+            }
+
+            break;
+        }
+
+        case "make_driver":
+        {
+            var info = await getData(req);
+            console.log(info);
+
+            if(!("user_id" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please include user_id"}));
+                res.end;
+                break;
+            }
+
+            if(!("car_model" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please include car_model"}));
+                res.end;
+                break;
+            }
+
+            if(!("number_plate" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please include number_plate"}));
+                res.end;
+                break;
+            }
+
+            if(!("color" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please include color"}));
+                res.end;
+                break;
+            }
+    
+            if(!("type" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please include type"}));
+                res.end;
+                break;
+            }
+
+            let message = await addDriverRecord(databaseConnection, info.user_id, info.car_model, info.number_plate, info.color, info.type);
+
+            res.write(message);
+            res.end();
+        }
 
         case "sendWelcomeEmail":
         {
@@ -114,7 +219,7 @@ var server = createServer( async (req, res) => {
 
             if(!("emailAddress" in info))
             {
-                res.write(JSON.stringify({"message": "Please provide an email address with the API."}))
+                res.write(JSON.stringify({"message": "Please provide an emailAddress to the API."}))
                 res.end();
                 return;
             }
@@ -127,7 +232,9 @@ var server = createServer( async (req, res) => {
                 res.end();
             }else{
 
-                var message = await getResetCode(databaseConnection, userID[0].id)
+                var message = await getResetCode(databaseConnection, userID[0].id);
+
+                console.log(message);
 
                 res.write(message);
                 res.end();
@@ -140,7 +247,19 @@ var server = createServer( async (req, res) => {
 
             console.log(info);
 
-            var message = await getUserInformation(info.userName, info.password, databaseConnection);
+            if(!("user_name" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a user_name"}));
+                res.end();
+            }
+
+            if(!("password" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a password"}));
+                res.end();
+            }
+
+            var message = await getUserInformation(info.user_name, info.password, databaseConnection);
 
             res.write(message);
             res.end();
@@ -181,8 +300,6 @@ var server = createServer( async (req, res) => {
             var info = await getData(req);
             console.log(info);
 
-            //console.log("Checking");
-
             if(!("user_name" in info))
             {
                 res.write(JSON.stringify({"Message": "Please provide a value for user_name"}));
@@ -219,9 +336,14 @@ var server = createServer( async (req, res) => {
                 break;
             }
 
-            var message = await addUserToDatabase(databaseConnection, info.user_name, info.first_name, info.last_name, info.email, info.password);
+            if(!("role" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a value for role"}));
+                res.end();
+                break;
+            }
 
-            console.log(message);
+            var message = await addUserToDatabase(databaseConnection, info.user_name, info.first_name, info.last_name, info.email, info.password, info.role);
             res.write(message);
             res.end();
         }
