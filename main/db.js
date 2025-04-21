@@ -43,11 +43,11 @@ async function addPassenger(dbConnection, user_id, ride_id)
 
 }
 
-async function addRating(dbConnection, user_id, rating, comment, date)
+async function addRating(dbConnection, user_id, ride_id, rating, comment, date)
 {
 
     return new Promise((resolve, reject) => {
-        dbConnection.query(`INSERT INTO Rating VALUES(0, ?, ?, ?, ?)`, [user_id, rating, comment, date],(err, result) => {
+        dbConnection.query(`INSERT INTO Rating VALUES(0, ?, ?, ?, ?, ?)`, [user_id, ride_id, rating, comment, date],(err, result) => {
             if(err)
             {
                 console.log(err);
@@ -62,11 +62,11 @@ async function addRating(dbConnection, user_id, rating, comment, date)
 
 }
 
-async function addRide(dbConnection, start_location, end_location, current_location_x, current_amount, number_of_passengers)
+async function addRide(dbConnection, start_location, end_location, current_location_x, route ,current_location_y, current_amount, number_of_passengers, start_time, status)
 {
 
     return new Promise((resolve, reject) => {
-        dbConnection.query(`INSERT INTO RidesInProgress VALUES(0, ?, ?, ?, ?, ?, ?)`, [start_location, end_location, current_location_x, current_location_y, current_amount, number_of_passengers],(err, result) => {
+        dbConnection.query(`INSERT INTO Rides VALUES(0, ?, ?, ?, ?, ?, ?, ?, ?, 'N/A', ?)`, [start_location, end_location, current_location_x, current_location_y, route, current_amount, number_of_passengers, start_time, status],(err, result) => {
             if(err)
             {
                 console.log(err);
@@ -100,11 +100,11 @@ async function addLocation(dbConnection, name, min_x, min_y, max_x, max_y)
 
 }
 
-async function addDriver(dbConnection, id, car_model, number_plate, color, type)
+async function addDriver(dbConnection, user_id, car_model, number_plate, color, type)
 {
 
     return new Promise((resolve, reject) => {
-        dbConnection.query(`INSERT INTO Driver VALUES(?, ?, ?, ?, ?)`, [id, car_model, number_plate, color, type],(err, result) => {
+        dbConnection.query(`INSERT INTO Driver VALUES(0, ?, ?, ?, ?, ?)`, [user_id, car_model, number_plate, color, type],(err, result) => {
             if(err)
             {
                 console.log(err);
@@ -140,6 +140,8 @@ async function addUnverifiedBooking(dbConnection, user_id, start_location, end_l
 
 async function verifyBooking(dbConnection, driver_id, unverified_booking_id)
 {
+
+    console.log(typeof(driver_id));
 
     return new Promise((resolve, reject) => {
         dbConnection.query(`INSERT INTO Bookings VALUES(0, ?, ?)`, [driver_id, unverified_booking_id],(err, result) => {
@@ -230,6 +232,237 @@ async function getUser(dbConnection, username, password)
     
 }
 
+async function getBookings(dbConnection, user_id)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Bookings_UnVerified WHERE user_id = ?`, [user_id],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function getVerifiedBookings(dbConnection, user_id)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Bookings LEFT JOIN Bookings_UnVerified ON Bookings.unverified_booking_id = Bookings_UnVerified.unverified_booking_id WHERE user_id = ?`, [user_id],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+
+async function getDriver(dbConnection, number_plate)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Driver WHERE number_plate = ?`, [number_plate],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function getAverageUserRating(dbConnection, user_id)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT AVG(rating) AS user_rating FROM Rating WHERE user_id = ?`, [user_id],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function passengersInRide(dbConnection, ride_id)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Passengers WHERE ride_id = ?`, [ride_id],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function getAllActiveRides(dbConnection)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Passengers WHERE status = 'active'`,(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function getLocation(dbConnection, location_id)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Location WHERE location_id = ?`, [location_id],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function getRidesById(dbConnection, ride_id)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Rides WHERE ride_id = ? AND status = 'active'`, [ride_id],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function getRidesByStartingLocation(dbConnection, starting_location)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Rides WHERE start_location = ? AND status = 'active'`, [starting_location],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function getRidesThroughLocation(dbConnection, location_id)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Rides WHERE route LIKE '%?%' AND status = 'active'`, [location_id],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function getRidesByEndingLocation(dbConnection, ending_location)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Rides WHERE end_location = ? AND status = 'active'`, [ending_location],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
 async function createResetCode(dbConnection, id)
 {
     return new Promise((resolve, reject) => {
@@ -296,6 +529,160 @@ async function closeConnection(databaseConnection)
 
 }
 
+async function updateLocationById(dbConnection, location_id, name, min_x, min_y, max_x, max_y)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE Location SET name = ?, min_x = ?, min_y = ?, max_x = ?, max_y = ? WHERE location_id = ?`, [name, min_x, min_y, max_x, max_y, location_id] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
+async function updateLocationByName(dbConnection, name, min_x, min_y, max_x, max_y)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE Location SET min_x = ?, min_y = ?, max_x = ?, max_y = ? WHERE name = ?`, [min_x, min_y, max_x, max_y, name] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
+async function updatePassengerNumberInRide(dbConnection, ride_id, number_of_passengers)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE Rides SET number_of_passengers = ? WHERE ride_id = ?`, [number_of_passengers, ride_id] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
+async function updateRouteInformation(dbConnection, ride_id, route)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE Rides SET route = ? WHERE ride_id = ?`, [route, ride_id] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
+async function updateRideStatus(dbConnection, ride_id, status)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE Rides SET status = ? WHERE ride_id = ?`, [status, ride_id] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
+async function updateRideLocation(dbConnection, ride_id, current_location_x, current_location_y)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE Rides SET current_location_x = ?, current_location_y = ? WHERE ride_id = ?`, [current_location_x, current_location_y, ride_id] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
+async function updateRideEndTime(dbConnection, ride_id, end_time)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE Rides SET end_time = ? WHERE ride_id = ?`, [end_time, ride_id] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
+async function updateDriverDetails(dbConnection, driver_id, car_model, number_plate, color, type)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE Driver SET car_model = ?, number_plate = ?, color = ?, type = ? WHERE driver_id = ?`, [car_model, number_plate, color, type, driver_id] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
+//["user_id", "email", "first_name", "last_name", "user_name"];
+async function updateUserDetails(dbConnection, user_id, email, first_name, last_name, user_name)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE User SET email = ?, first_name = ?, last_name = ?, user_name = ? WHERE id = ?`, [email, first_name, last_name, user_name, user_id] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
 module.exports = {
     createConnection,
     closeConnection,
@@ -312,5 +699,25 @@ module.exports = {
     addRide,
     addLocation,
     addPassenger,
-    addRating
+    addRating,
+    getBookings,
+    getVerifiedBookings,
+    getDriver,
+    getAverageUserRating,
+    passengersInRide,
+    getLocation,
+    getRidesById,
+    getRidesByStartingLocation,
+    getRidesByEndingLocation,
+    updateLocationById,
+    updateLocationByName,
+    updatePassengerNumberInRide,
+    updateRideLocation,
+    updateDriverDetails,
+    updateUserDetails,
+    updateRideEndTime,
+    updateRouteInformation,
+    updateRideStatus,
+    getAllActiveRides,
+    getRidesThroughLocation,
 };

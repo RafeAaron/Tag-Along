@@ -95,11 +95,11 @@ export async function addBooking_UnVerified(dbConnection, user_id, start_locatio
     if("errno" in result) 
     {
         
-        return JSON.stringify({"Message": "There was an error creating a booking"});
+        return JSON.stringify({"Message": "There was an error creating a booking", "errno": result.errno});
 
     }else{
 
-        return JSON.stringify({"Message": "Booking record created"});
+        return JSON.stringify({"Message": "Booking record created", "unverified_booking_id": result.insertId});
 
     }
 }
@@ -117,18 +117,19 @@ export async function verifyBookingRecord(dbConnection, driver_id, booking_id)
         return JSON.stringify({"Message": "Booking ID not specified"});
     }
 
+
     var result = await verifyBooking(dbConnection, driver_id, booking_id).catch((err) => {
         return err;
     })
 
-    if(result == undefined)
+    if(("errno" in result))
     {
         
-        return JSON.stringify({"Message": "There was an error confirming the booking"});
+        return JSON.stringify({"Message": "There was an error confirming the booking", "errno": result.errno});
 
     }else{
 
-        return JSON.stringify({"Message": "Booking verified"});
+        return JSON.stringify({"Message": "Booking verified", "booking_id": result.insertId});
 
     }
 }
@@ -150,24 +151,29 @@ export async function addPassengerRecord(dbConnection, user_id, ride_id)
         return err;
     })
 
-    if(result == undefined)
+    if(("errno" in result))
     {
         
-        return JSON.stringify({"Message": "There was an error adding the passenger"});
+        return JSON.stringify({"Message": "There was an error adding the passenger", "errno": result.errno});
 
     }else{
 
-        return JSON.stringify({"Message": "Added Passenger Successfully"});
+        return JSON.stringify({"Message": "Added Passenger Successfully", "ride_id": ride_id, "user_id": user_id });
 
     }
 }
 
-export async function addRatingRecord(dbConnection, user_id, rating, comment, date)
+export async function addRatingRecord(dbConnection, user_id, ride_id, rating, comment, date)
 {
 
     if(user_id.length == 0)
     {
         return JSON.stringify({"Message": "User ID not specified"});
+    }
+
+    if(ride_id.length == 0)
+    {
+        return JSON.stringify({"Message": "Ride ID not specified"});
     }
 
     if(rating.length == 0)
@@ -185,26 +191,26 @@ export async function addRatingRecord(dbConnection, user_id, rating, comment, da
         return JSON.stringify({"Message": "Date not specified"});
     }
 
-    var result = await addRating(dbConnection, user_id, rating, comment, date).catch((err) => {
+    var result = await addRating(dbConnection, user_id, ride_id, rating, comment, date).catch((err) => {
         return err;
     })
 
-    if(result == undefined)
+    if(("errno" in result))
     {
         
-        return JSON.stringify({"Message": "There was an error adding your rating"});
+        return JSON.stringify({"Message": "There was an error adding your rating", "errno": result.errno});
 
     }else{
 
-        return JSON.stringify({"Message": "Rating recorded"});
+        return JSON.stringify({"Message": "Rating recorded", "rating_id": result.insertId});
 
     }
 }
 
-export async function addDriverRecord(dbConnection, id, car_model, number_plate, color, type)
+export async function addDriverRecord(dbConnection, user_id, car_model, number_plate, color, type)
 {
 
-    if(id.length == 0)
+    if(user_id.length == 0)
     {
         return JSON.stringify({"Message": "ID not specified"});
     }
@@ -233,14 +239,14 @@ export async function addDriverRecord(dbConnection, id, car_model, number_plate,
         return err;
     })
 
-    if(result == undefined)
+    if(("errno" in result))
     {
 
-        return JSON.stringify({"Message": "There was an error making the user a driver"});
+        return JSON.stringify({"Message": "There was an error making the user a driver", "errno": result.errno});
 
     }else{
 
-        return JSON.stringify({"Message": "User made a driver in the database"});
+        return JSON.stringify({"Message": "User made a driver in the database", "driver_id": id});
 
     }
 }
@@ -277,19 +283,19 @@ export async function addLocationRecord(dbConnection, name, min_x, min_y, max_x,
         return err;
     })
 
-    if(result == undefined)
+    if("errno" in result)
     {
 
-        return JSON.stringify({"Message": "There was an error adding the location"});
+        return JSON.stringify({"Message": "There was an error adding the location", "errno": result.errno});
 
     }else{
 
-        return JSON.stringify({"Message": "Location added successfully"});
+        return JSON.stringify({"Message": "Location added successfully", "location_id": result.insertId});
 
     }
 }
 
-export async function addRideRecord(dbConnection, start_location, end_location, current_location_x, current_amount, number_of_passengers)
+export async function addRideRecord(dbConnection, start_location, end_location, current_location_x, current_location_y, route, current_amount, number_of_passengers, status)
 {
 
     if(start_location.length == 0)
@@ -322,18 +328,18 @@ export async function addRideRecord(dbConnection, start_location, end_location, 
         return JSON.stringify({"Message": "Number of Passengers not specified"});
     }
 
-    var result = await addRide(dbConnection, start_location, end_location, current_location_x, current_amount, number_of_passengers).catch((err) => {
+    var result = await addRide(dbConnection, start_location, end_location, current_location_x, current_location_y, route, current_amount, number_of_passengers, status).catch((err) => {
         return err;
     })
 
-    if(result == undefined)
+    if("errno" in result)
     {
 
-        return JSON.stringify({"Message": "There was an error adding the location"});
+        return JSON.stringify({"Message": "There was an error adding the location", "errno": result.errno});
 
     }else{
 
-        return JSON.stringify({"Message": "Location added successfully"});
+        return JSON.stringify({"Message": "Ride added successfully", "ride_id": result.insertId});
 
     }
 }
