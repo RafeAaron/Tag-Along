@@ -1,4 +1,4 @@
-import { getUser, createResetCode, getID, retrieveResetCode, getBookings, getVerifiedBookings, getDriver, getAverageUserRating, passengersInRide, getLocation, getRidesById, getRidesByEndingLocation, getRidesByStartingLocation, getRidesThroughLocation } from "./db.js";
+import { getUserFromID , getUser, createResetCode, getID, retrieveResetCode, getBookings, getVerifiedBookings, getDriver, getAverageUserRating, passengersInRide, getLocation, getRidesById, getRidesByEndingLocation, getRidesByStartingLocation, getRidesThroughLocation, getDriverUsingUserId, getUserAccount } from "./db.js";
 
 export function welcomeUser(res)
 {
@@ -49,6 +49,28 @@ export async function getUserInformation(userName, password, dbConnection)
     }
 }
 
+export async function getUserAccountInformation(user_id, dbConnection)
+{
+    var account = await getUserAccount(dbConnection, user_id).catch(error => console.log("There is an error somewhere"));
+
+    if (account.length == 0 ){
+        return JSON.stringify({"message": "User Account doesn't exist"})
+    }else{
+        return JSON.stringify({"Account": account[0]});
+    }
+}
+
+export async function getUserUsingID(user_id, dbConnection)
+{
+    var user = await getUserFromID(dbConnection, user_id).catch(error => console.log("There is an error somewhere"));
+
+    if (user.length == 0 ){
+        return JSON.stringify({"message": "User doesn't exist"})
+    }else{
+        return JSON.stringify({"User": user[0]});
+    }
+}
+
 export async function getDriverInformation(number_plate, dbConnection)
 {
     var driver = await getDriver(dbConnection, number_plate).catch(error => console.log("There is an error somewhere"));
@@ -84,6 +106,20 @@ export async function getPassengersInRide(ride_id, dbConnection)
         return JSON.stringify({"Message": "No passengers present in ride"})
     }else{
         return JSON.stringify({"Passengers": passengers});
+    }
+    
+}
+
+export async function getDriverFromUserID(user_id, dbConnection)
+{
+    var driver = await getDriverUsingUserId(dbConnection, user_id).catch(error => console.log("There is an error somewhere: ", error));
+
+    console.log(driver);
+    
+    if (driver.length == 0 ){
+        return JSON.stringify({"Message": "No driver registered with this user id"})
+    }else{
+        return JSON.stringify({"Driver": driver});
     }
     
 }

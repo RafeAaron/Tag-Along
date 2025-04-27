@@ -12,12 +12,15 @@ CREATE TABLE IF NOT EXISTS User(
     first_name varchar(30),
     last_name varchar(30),
     user_name varchar(30),
+    age int ,
+    gender VARCHAR(15),
     password varchar(30),
     role varchar(20)
 );
 
-INSERT INTO User VALUES(0, "rafeaaron21@gmail.com", "Rafe", "Aaron", "@rafeaaron23", "Arthur@2025", "traveller/driver");
-INSERT INTO User VALUES(0, "michealronny@gmail.com", "Micheal", "Ronny", "@michealRonny", "michealRonny2024", "driver");
+INSERT INTO User VALUES(0, "rafeaaron21@gmail.com", "Rafe", "Aaron", "@rafeaaron23", 21 , "Male" , "Arthur@2025", "traveller/driver");
+INSERT INTO User VALUES(0, "michealronny@gmail.com", "Micheal", "Ronny", "@michealRonny", 24 , "Male" ,"michealRonny2024", "driver");
+INSERT INTO User VALUES(0, "tonyCroos@gmail.com", "Tonny", "Croos", "@tonnyCroos", 34 , "Male" ,"tonnyCroos2024", "driver");
 
 CREATE TABLE IF NOT EXISTS Driver(
 
@@ -33,7 +36,8 @@ CREATE TABLE IF NOT EXISTS Driver(
 
 );
 
-INSERT INTO Driver VALUES(0, 1, "Prius", "UAB 874F", "Red", "Family Car");
+INSERT INTO Driver VALUES(0, 2, "Prius", "UAB 874F", "Red", "Family Car");
+INSERT INTO Driver VALUES(0, 3, "Land Rover", "UBA 768T", "Grey", "Family Car");
 
 CREATE TABLE IF NOT EXISTS resetPasswordCodes(
     id int PRIMARY KEY AUTO_INCREMENT,
@@ -74,7 +78,9 @@ CREATE TABLE IF NOT EXISTS accounts(
 
 );
 
-INSERT INTO accounts VALUES(0, 1, 400, "2024-10-5", "2025-01-23");
+INSERT INTO accounts VALUES(0, 1, 400, "5/11/2024", "5/12/2024");
+INSERT INTO accounts VALUES(0, 2, 1400, "5/6/2024", "5/6/2024");
+INSERT INTO accounts VALUES(0, 3, 3500, "5/7/2024", "5/7/2024");
 
 CREATE TABLE IF NOT EXISTS Bookings_UnVerified
 (
@@ -144,7 +150,9 @@ CREATE TABLE IF NOT EXISTS Passengers(
     FOREIGN KEY(ride_id)
     REFERENCES Rides(ride_id)
 
-);
+); 
+
+INSERT INTO Passengers VALUES (1, 1);
 
 CREATE TABLE IF NOT EXISTS Rating
 (
@@ -154,6 +162,19 @@ CREATE TABLE IF NOT EXISTS Rating
     rating int,
     comment VARCHAR(100),
     date VARCHAR(20),
+
+    FOREIGN KEY(user_id)
+    REFERENCES User(id),
+    FOREIGN KEY(ride_id)
+    REFERENCES Rides(ride_id)
+);
+
+CREATE TABLE IF NOT EXISTS RequestToJoinRide(
+    request_id int AUTO_INCREMENT PRIMARY KEY,
+    ride_id int,
+    user_id int,
+    current_location_x VARCHAR(40),
+    current_location_y VARCHAR(40),
 
     FOREIGN KEY(user_id)
     REFERENCES User(id),

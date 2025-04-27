@@ -1,8 +1,8 @@
 import {createServer} from "http";
 import {parse} from 'querystring';
 import { createConnection, addUser, closeConnection, getID, getIDFromUsername, getAllActiveRides } from "./db.js";
-import {welcomeUser, getUserInformation, createCodeForReset, getResetCode, getBookingsForUser, getVerifiedBookingsForUser, getDriverInformation, getAverageUserRatingInformation, getPassengersInRide, getLocationInformation, getRidesByIdInformation, getRidesByStartingLocationInformation, getRidesByEndingInformation, getRidesThroughLocationInformation} from "./getRequests.js";
-import {addUserToDatabase, updateUserPassword, initialisePayment, addDriverRecord, addBooking_UnVerified, verifyBookingRecord, addLocationRecord, addRideRecord, addPassengerRecord, addRatingRecord} from "./postRequests.js";
+import {welcomeUser, getUserInformation, createCodeForReset, getResetCode, getBookingsForUser, getVerifiedBookingsForUser, getDriverInformation, getAverageUserRatingInformation, getPassengersInRide, getLocationInformation, getRidesByIdInformation, getRidesByStartingLocationInformation, getRidesByEndingInformation, getRidesThroughLocationInformation, getDriverFromUserID, getUserUsingID, getUserAccountInformation} from "./getRequests.js";
+import {addUserToDatabase, updateUserPassword, initialisePayment, addDriverRecord, addBooking_UnVerified, verifyBookingRecord, addLocationRecord, addRideRecord, addPassengerRecord, addRatingRecord, makeRequestToTagAlong, addUserAccountToDatabase} from "./postRequests.js";
 import { sendResetCode, sendWelcomeEmail } from "./email.js";
 import { updateCurrentRideLocation, updateDriverInformation, updateEndTimeInRideInformation, updateLocationInformationUsingId, updateLocationInformationUsingName, updatePassengerNumberInRideInformation, updateRideInProgressRouteInformation, updateUserInformation } from "./update.js";
 
@@ -29,7 +29,8 @@ import { updateCurrentRideLocation, updateDriverInformation, updateEndTimeInRide
 
         getBookings
         getVerifiedBookings
-        getDriver
+        getDriverInformation
+        getDriverFromUserID
         getAverageRating
         getPassengersInRide
         getLocationInformation
@@ -37,6 +38,7 @@ import { updateCurrentRideLocation, updateDriverInformation, updateEndTimeInRide
         getRidesByStartingLocation
         getRidesByEndingLocation
         getActiveRides
+        getUser
 
         updateLocationById
         updateLocationNyName
@@ -53,9 +55,76 @@ var databaseConnection = await createConnection();
 var server = createServer( async (req, res) => {
 
     let baseurl = req.url.split("?")[0]
+
+    console.log(req.url);
     
     switch(baseurl)
     {
+
+        case "/requestToTagAlong":
+        {
+            var info = await getData(req);
+            console.log(info);
+
+            let necessary_fields = ["user_id", "ride_id", "current_location_x", "current_location_y"];
+            let missing_fields = [];
+
+            for(let a = 0; a < necessary_fields.length; a++)
+            {
+                if(!(necessary_fields[a] in info))
+                {
+                    missing_fields.push(necessary_fields[a]);
+                }
+            }
+
+            if(missing_fields.length != 0)
+            {
+                let message = "Please provide ";
+
+                for(let b = 0; b < missing_fields.length; b++)
+                {
+                    if(b == missing_fields.length - 1)
+                    {
+                        message += missing_fields[b];
+                    }else
+                    {
+                        message += missing_fields[b] + ", ";
+                    }
+                }
+
+                res.write(JSON.stringify({"Message": message}));
+                res.end();
+
+            }else{
+
+                var message = await makeRequestToTagAlong(databaseConnection, info.user_id, info.ride_id, info.current_location_x, info.current_location_y);
+                res.write(message);
+                res.end();
+
+            }
+
+            break;
+        }
+
+        case "/getUser":
+        {
+            let queryParameters = req.url.split("?");
+            let queryParams = parse(queryParameters[1]);
+    
+            if(!("user_id" in queryParams))
+            {
+                res.write(JSON.stringify({"Message": "Please provide user_id"}));
+                res.end();
+                break;
+            }
+
+            console.log("User ID: " + queryParams.user_id);
+    
+            let message = await getUserUsingID(queryParams.user_id, databaseConnection);
+            res.write(message);
+            res.end()
+            break;
+        }
 
         case "/getActiveRides":
         {
@@ -480,6 +549,24 @@ var server = createServer( async (req, res) => {
             break;
         }
 
+        case "/getDriverUsingUserID":
+        {
+            let queryParameters = req.url.split("?");
+            let queryParams = parse(queryParameters[1]);
+    
+            if(!("user_id" in queryParams))
+            {
+                res.write(JSON.stringify({"Message": "Please provide user_id"}));
+                res.end();
+                break;
+            }
+    
+            let message = await getDriverFromUserID(queryParams.user_id, databaseConnection);
+            res.write(message);
+            res.end()
+            break;
+        }
+
         case "/getRidesInProgressByEndingLocation":
         {
             let queryParameters = req.url.split("?");
@@ -708,7 +795,7 @@ var server = createServer( async (req, res) => {
             var info = await getData(req);
             console.log(info);
 
-            let neccessary_fields = ["start_location", "end_location", "current_location_x", "current_location_y", "current_amount", "number_of_passengers"];
+            let neccessary_fields = ["start_location", "end_location", "current_location_x", "current_location_y", "current_amount", "number_of_passengers", "route"];
             let missing_fields = [];
             
             for(let i = 0; i < neccessary_fields.length; i++)
@@ -737,7 +824,7 @@ var server = createServer( async (req, res) => {
                 res.end();
             }else{
                 
-                let message = await addRideRecord(databaseConnection, info.start_location, info.end_location, info.current_location_x, info.current_location_y, info.current_amount, info.number_of_passengers);
+                let message = await addRideRecord(databaseConnection, info.start_location, info.end_location, info.current_location_x, info.current_location_y, info.route, info.current_amount, info.number_of_passengers);
 
                 res.write(message);
                 res.end();
@@ -753,7 +840,7 @@ var server = createServer( async (req, res) => {
 
             //user_id, start_location, end_location, date, initial_amount, time
 
-            let neccessary_fields = ["user_id", "start_location", "end_location", "date", "initial_amount", "time"];
+            let neccessary_fields = ["user_id", "start_location", "end_location", "date", "time"];
             let missing_fields = [];
             
             for(let i = 0; i < neccessary_fields.length; i++)
@@ -782,7 +869,7 @@ var server = createServer( async (req, res) => {
                 res.end();
             }else{
                 
-                let message = await addBooking_UnVerified(databaseConnection, info.user_id, info.start_location, info.end_location, info.date, info.initial_amount, info.time)
+                let message = await addBooking_UnVerified(databaseConnection, info.user_id, info.start_location, info.end_location, info.date, info.time)
 
                 res.write(message);
                 res.end();
@@ -932,7 +1019,7 @@ var server = createServer( async (req, res) => {
                 break;
             }
 
-            sendWelcomeEmail(info.user_email_address, user_name)
+            sendWelcomeEmail(info.user_email_address, info.user_name)
             break;
         }
 
@@ -1070,6 +1157,81 @@ var server = createServer( async (req, res) => {
             break;
         }
 
+        case "/getUserAccount":
+        {
+
+            var info = await getData(req);
+            console.log(info);
+
+            let necessary_fields = ["user_id"];
+            let missing_fields = [];
+
+            for(let a = 0; a < necessary_fields.length; a++)
+            {
+                if(!(necessary_fields[a] in info))
+                {
+                    missing_fields.push(necessary_fields[a]);
+                }
+            }
+
+            if(missing_fields.length != 0)
+            {
+                let message = "Please provide ";
+
+                for(let b = 0; b < missing_fields.length; b++)
+                {
+                    if(b == missing_fields.length - 1)
+                    {
+                        message += missing_fields[b];
+                    }else
+                    {
+                        message += missing_fields[b] + ", ";
+                    }
+                }
+
+                res.write(JSON.stringify({"Message": message}));
+                res.end();
+
+            }else{
+
+                var message = await getUserAccountInformation(info.user_id, databaseConnection);
+                res.write(message);
+                res.end();
+
+            }
+
+            break;
+
+        }
+
+        case "/addUserAccount":
+        {
+            var info = await getData(req);
+
+            console.log(info);
+
+            if(!("user_id" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a user_id"}));
+                res.end();
+                break;
+            }
+
+            if(!("date" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a date"}));
+                res.end();
+                break;
+            }
+
+            var message = await addUserAccountToDatabase(databaseConnection, info.user_id, info.date);
+
+            res.write(message);
+            res.end();
+
+            break;
+        }
+
         case "/updatePassword":
         {
             var info = await getData(req);
@@ -1117,6 +1279,22 @@ var server = createServer( async (req, res) => {
                 break;
             }
 
+            if(!("age" in info))
+                {
+                    res.write(JSON.stringify({"Message": "Please provide a value for user_name"}));
+                    console.log("Checking");
+                    res.end();
+                    break;
+                }
+
+            if(!("gender" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a value for user_name"}));
+                console.log("Checking");
+                res.end();
+                break;
+            }
+
             if(!("first_name" in info))
             {
                 res.write(JSON.stringify({"Message": "Please provide a value for first_name"}));
@@ -1152,12 +1330,14 @@ var server = createServer( async (req, res) => {
                 break;
             }
 
-            var message = await addUserToDatabase(databaseConnection, info.user_name, info.first_name, info.last_name, info.email, info.password, info.role);
+            var message = await addUserToDatabase(databaseConnection, info.user_name, info.first_name, info.last_name, info.email, info.password, info.role, info.age, info.gender);
             res.write(message);
             res.end();
 
             break;
         }
+
+        
     }
 
 }).listen(8090);

@@ -39,9 +39,9 @@ export async function sendWelcomeEmail(gmailAddress, username)
         };
 
         transporter.sendMail(mailingOptions, (error, info) => {
-            if(error) reject(error);
+            if(error) reject(JSON.stringify({"Error": error}));
 
-            resolve(info.response);
+            resolve(JSON.stringify({"Message": info.response}));
         })
 
     });

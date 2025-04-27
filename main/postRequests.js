@@ -1,7 +1,7 @@
-import {addUser, changePassword, getID, getIDFromUsername, addDriver, verifyBooking, addPassenger, addRating, addLocation, addRide, addUnverifiedBooking} from "./db.js"
-import { initiatePayment, addUserAccount } from "./paymentSystem.js";
+import { addUserAccount, addUser, changePassword, getID, getIDFromUsername, addDriver, verifyBooking, addPassenger, addRating, addLocation, addRide, addUnverifiedBooking, addRequestToJoinRide} from "./db.js"
+import { initiatePayment} from "./paymentSystem.js";
 
-export async function addUserToDatabase(dbConnection, user_name, first_name, last_name, email, password, role){
+export async function addUserToDatabase(dbConnection, user_name, first_name, last_name, email, password, role, age, gender){
 
     if(user_name.length == 0)
     {
@@ -38,7 +38,7 @@ export async function addUserToDatabase(dbConnection, user_name, first_name, las
         return JSON.stringify({"Message": "Role Not Supplied"});
     }
 
-    var result = await addUser(dbConnection, user_name, password, first_name, last_name, email, role).catch((err) => {
+    var result = await addUser(dbConnection, user_name, password, first_name, last_name, email, role, age, gender).catch((err) => {
         //console.log(err);
         return err;
     });
@@ -48,14 +48,14 @@ export async function addUserToDatabase(dbConnection, user_name, first_name, las
         return JSON.stringify({"Message": "There Was An Error Adding The User To The Database"})
     }else if(result.errno == 1062)
     {
-        return JSON.stringify({"Message": "This Email Is Already Taken"});
+        return JSON.stringify({"Error": "This Email Is Already Taken"});
     }else{
         return JSON.stringify({"User_ID": result.insertId})
     }
 
 }
 
-export async function addBooking_UnVerified(dbConnection, user_id, start_location, end_location, date, initial_amount, time)
+export async function addBooking_UnVerified(dbConnection, user_id, start_location, end_location, date, time)
 {
 
     if(user_id.length == 0)
@@ -78,17 +78,12 @@ export async function addBooking_UnVerified(dbConnection, user_id, start_locatio
         return JSON.stringify({"Message": "Date not specified"});
     }
 
-    if(initial_amount.length == 0)
-    {
-        return JSON.stringify({"Message": "Initial Amount not specified"});
-    }
-
     if(time.length == 0)
     {
         return JSON.stringify({"Message": "Time not specified"});
     }
 
-    var result = await addUnverifiedBooking(dbConnection, user_id, start_location, end_location, date, initial_amount, time).catch((err) => {
+    var result = await addUnverifiedBooking(dbConnection, user_id, start_location, end_location, date, time).catch((err) => {
         return err;
     })
 
@@ -235,7 +230,7 @@ export async function addDriverRecord(dbConnection, user_id, car_model, number_p
         return JSON.stringify({"Message": "Type not specified"});
     }
 
-    var result = await addDriver(dbConnection, id, car_model, number_plate, color, type).catch((err) => {
+    var result = await addDriver(dbConnection, user_id, car_model, number_plate, color, type).catch((err) => {
         return err;
     })
 
@@ -246,7 +241,7 @@ export async function addDriverRecord(dbConnection, user_id, car_model, number_p
 
     }else{
 
-        return JSON.stringify({"Message": "User made a driver in the database", "driver_id": id});
+        return JSON.stringify({"Message": "User made a driver in the database", "driver_id": result.insertId});
 
     }
 }
@@ -295,7 +290,7 @@ export async function addLocationRecord(dbConnection, name, min_x, min_y, max_x,
     }
 }
 
-export async function addRideRecord(dbConnection, start_location, end_location, current_location_x, current_location_y, route, current_amount, number_of_passengers, status)
+export async function addRideRecord(dbConnection, start_location, end_location, current_location_x, current_location_y, route, current_amount, number_of_passengers)
 {
 
     if(start_location.length == 0)
@@ -328,7 +323,7 @@ export async function addRideRecord(dbConnection, start_location, end_location, 
         return JSON.stringify({"Message": "Number of Passengers not specified"});
     }
 
-    var result = await addRide(dbConnection, start_location, end_location, current_location_x, current_location_y, route, current_amount, number_of_passengers, status).catch((err) => {
+    var result = await addRide(dbConnection, start_location, end_location, current_location_x, current_location_y, route, current_amount, number_of_passengers).catch((err) => {
         return err;
     })
 
@@ -356,6 +351,38 @@ export async function updateUserPassword(dbConnection, newPassword, ID)
     }
     else{
         return JSON.stringify({"message": "No data changed, User might not exist"})
+    }
+
+}
+
+export async function makeRequestToTagAlong(dbConnection, user_id, ride_id, current_location_x, current_location_y)
+{
+    var result = await addRequestToJoinRide(dbConnection, user_id, ride_id, current_location_x, current_location_y).catch((err) => {
+        console.log(err);
+    });
+
+    if(result.affectedRows == 1)
+    {
+        return JSON.stringify({"message": "Request Made. Wait until you are allowed"});
+    }
+    else{
+        return JSON.stringify({"err": "There was an error on making the request"});
+    }
+
+}
+
+export async function addUserAccountToDatabase(dbConnection, user_id, date_created)
+{
+    var result = await addUserAccount(dbConnection, user_id, date_created).catch((err) => {
+        console.log(err);
+    });
+
+    if(result.affectedRows == 1)
+    {
+        return JSON.stringify({"Message": "User Account Created"});
+    }
+    else{
+        return JSON.stringify({"err": "There was an error creating the account"});
     }
 
 }

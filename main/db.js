@@ -5,11 +5,30 @@ const databasePort = "3306"
 const passwordDb = "Stuart@2024"
 const databaseName = "TagAlong"
 
-async function addUser(dbConnection, username, password, first_name, last_name, email, role)
+async function addUser(dbConnection, username, password, first_name, last_name, email, role, age, gender)
 {
 
     return new Promise((resolve, reject) => {
-        dbConnection.query(`INSERT INTO User VALUES(0, ?, ?, ?, ?, ?, ?)`, [email, first_name, last_name, username, password, role],(err, result) => {
+        dbConnection.query(`INSERT INTO User VALUES(0, ?, ?, ?, ?, ?, ?, ?, ?)`, [email, first_name, last_name, username, age, gender, password, role],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function addRequestToJoinRide(dbConnection, user_id, ride_id, current_location_x, current_location_y)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`INSERT INTO RequestToJoinRide VALUES(0, ?, ?, ?, ?)`, [ride_id, user_id, current_location_x, current_location_y],(err, result) => {
             if(err)
             {
                 console.log(err);
@@ -62,8 +81,13 @@ async function addRating(dbConnection, user_id, ride_id, rating, comment, date)
 
 }
 
-async function addRide(dbConnection, start_location, end_location, current_location_x, route ,current_location_y, current_amount, number_of_passengers, start_time, status)
+async function addRide(dbConnection, start_location, end_location, current_location_x ,current_location_y, route, current_amount, number_of_passengers)
 {
+
+    let date = new Date();
+
+    let start_time = "" + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+    let status = "active";
 
     return new Promise((resolve, reject) => {
         dbConnection.query(`INSERT INTO Rides VALUES(0, ?, ?, ?, ?, ?, ?, ?, ?, 'N/A', ?)`, [start_location, end_location, current_location_x, current_location_y, route, current_amount, number_of_passengers, start_time, status],(err, result) => {
@@ -119,11 +143,11 @@ async function addDriver(dbConnection, user_id, car_model, number_plate, color, 
 
 }
 
-async function addUnverifiedBooking(dbConnection, user_id, start_location, end_location, date, initial_amount, time)
+async function addUnverifiedBooking(dbConnection, user_id, start_location, end_location, date, time)
 {
 
     return new Promise((resolve, reject) => {
-        dbConnection.query(`INSERT INTO Bookings_UnVerified VALUES(0, ?, ?, ?, ?, ?, ?)`, [user_id, start_location, end_location, date, initial_amount, time],(err, result) => {
+        dbConnection.query(`INSERT INTO Bookings_UnVerified VALUES(0, ?, ?, ?, ?, ?, ?)`, [user_id, start_location, end_location, date, 4500, time],(err, result) => {
             if(err)
             {
                 //console.log(err);
@@ -218,6 +242,25 @@ async function getUser(dbConnection, username, password)
 
     return new Promise((resolve, reject) => {
         dbConnection.query(`SELECT * FROM User WHERE user_name = ? AND password = ?`, [username, password], (err, result) => {
+
+            if(err){
+                reject(err);
+            }
+            else{
+                
+                resolve(result);
+            }
+    
+        })
+    })
+    
+}
+
+async function getUserFromID(dbConnection, user_id)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`SELECT * FROM User WHERE id = ?`, [user_id], (err, result) => {
 
             if(err){
                 reject(err);
@@ -343,14 +386,14 @@ async function getAllActiveRides(dbConnection)
 
     return new Promise((resolve, reject) => {
 
-        dbConnection.query(`SELECT * FROM Passengers WHERE status = 'active'`,(err, result) => {
+        dbConnection.query(`SELECT * FROM Rides WHERE status = 'active'`,(err, result) => {
             if(err)
             {
                 console.log(err);
                 reject(err);
             }else
             {
-                resolve(result);
+                resolve(JSON.stringify({"rides": result}));
             }
         });
     })
@@ -406,6 +449,48 @@ async function getRidesByStartingLocation(dbConnection, starting_location)
     return new Promise((resolve, reject) => {
 
         dbConnection.query(`SELECT * FROM Rides WHERE start_location = ? AND status = 'active'`, [starting_location],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function getDriverUsingUserId(dbConnection, user_id)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Driver WHERE user_id = ?`, [user_id],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(err);
+            }else
+            {
+                //console.log(result)
+                resolve(result);
+            }
+        });
+    })
+    
+
+}
+
+async function getUserAccount(dbConnection, user_id)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM accounts WHERE userID = ?`, [user_id],(err, result) => {
             if(err)
             {
                 console.log(err);
@@ -665,6 +750,23 @@ async function updateDriverDetails(dbConnection, driver_id, car_model, number_pl
 
 }
 
+async function addUserAccount(dbConnection, user_id, date_created)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`INSERT INTO accounts VALUES(0, ?, ?, ?, ?)`, [user_id, 0, date_created, date_created] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
 //["user_id", "email", "first_name", "last_name", "user_name"];
 async function updateUserDetails(dbConnection, user_id, email, first_name, last_name, user_name)
 {
@@ -720,4 +822,9 @@ module.exports = {
     updateRideStatus,
     getAllActiveRides,
     getRidesThroughLocation,
+    getDriverUsingUserId,
+    getUserFromID,
+    addRequestToJoinRide,
+    addUserAccount,
+    getUserAccount,
 };
