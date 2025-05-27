@@ -1,4 +1,4 @@
-import { addUserAccount, addUser, changePassword, getID, getIDFromUsername, addDriver, verifyBooking, addPassenger, addRating, addLocation, addRide, addUnverifiedBooking, addRequestToJoinRide} from "./db.js"
+import { addUserAccount, addUser, changePassword, getID, getIDFromUsername, addDriver, verifyBooking, addPassenger, addRating, addLocation, addRide, addUnverifiedBooking, addRequestToJoinRide, getUserAccount, updateUserAmount, updatePaymentDetails} from "./db.js"
 import { initiatePayment} from "./paymentSystem.js";
 
 export async function addUserToDatabase(dbConnection, user_name, first_name, last_name, email, password, role, age, gender){
@@ -387,6 +387,41 @@ export async function addUserAccountToDatabase(dbConnection, user_id, date_creat
 
 }
 
+async function completePayment(sender_id, reciever_id, amount, dbConnection, payment_id)
+{
+
+    var user1 = await getUserAccount(dbConnection, sender_id).catch((err) => {return JSON.stringify({"message": "There was an error getting user account details"})});
+    var user2 = await getUserAccount(dbConnection, reciever_id).catch((err) => {return JSON.stringify({"message": "There was an error getting user account details"})});
+
+    console.log(user1);
+    console.log(user2);
+
+    if(parseInt(user1[0].amount) < amount)
+    {
+        return JSON.stringify({"message": "Insufficient balance"})
+    }else{
+
+        var result1 = await updateUserAmount(dbConnection, sender_id, ( parseInt(user1[0].amount) - parseInt(amount)))
+        var result2 = await updateUserAmount(dbConnection, reciever_id, ( parseInt(user2[0].amount) + parseInt(amount)))
+
+        if(result1.affectedRows == 1 && result2.affectedRows == 1)
+        {
+            var result3 = await updatePaymentDetails(dbConnection, payment_id);
+
+            if(("affectedRows" in result3)){
+                return true;
+            }else{
+                return false;
+            }
+
+        }else{
+            return false;
+        }
+
+    }
+
+}
+
 export async function initialisePayment(senderID, recieverID, dbConnection, amount, reason)
 {
 
@@ -394,11 +429,17 @@ export async function initialisePayment(senderID, recieverID, dbConnection, amou
         return JSON.stringify({"message": "There was an error initiating a payment"});
     });
 
+    console.log(result)
+
     if(result.affectedRows == 1)
     {
-        return JSON.stringify({"message": "Payment ID: " + result.insertId});
+        if(completePayment(senderID, recieverID, amount, dbConnection)){
+            return JSON.stringify({"message": "Payment ID: " + result.insertId});
+        }else{
+            return JSON.stringify({"message": "Failed to complete payment"});
+        }
     }else{
-        return JSON.stringify({"message": "Payment initiated failed"});
+        return JSON.stringify({"message": "Payment initialization failed: " + message, "errno": result.errno});
     }
     
 }

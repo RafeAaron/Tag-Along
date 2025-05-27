@@ -24,6 +24,25 @@ async function addUser(dbConnection, username, password, first_name, last_name, 
 
 }
 
+async function getPassengersRequestingRide(dbConnection, ride_id)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`SELECT * FROM RequestToJoinRide WHERE ride_id = ?`, [ride_id],(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(JSON.stringify({"Error": err}));
+            }else
+            {
+                resolve(JSON.stringify({"Passengers": result}));
+            }
+        });
+    })
+    
+
+}
+
 async function addRequestToJoinRide(dbConnection, user_id, ride_id, current_location_x, current_location_y)
 {
 
@@ -256,6 +275,25 @@ async function getUser(dbConnection, username, password)
     
 }
 
+async function getUserUsingUserName(dbConnection, username)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`SELECT * FROM User WHERE user_name = ?`, [username], (err, result) => {
+
+            if(err){
+                reject(err);
+            }
+            else{
+                console.log(result)
+                resolve(JSON.stringify({"User":result}));
+            }
+    
+        })
+    })
+    
+}
+
 async function getUserFromID(dbConnection, user_id)
 {
 
@@ -397,8 +435,50 @@ async function getAllActiveRides(dbConnection)
             }
         });
     })
-    
+}
 
+async function isDriverInRide(dbConnection, user_id)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Passengers WHERE user_id = ?`, [user_id] ,(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(JSON.stringify({"error": "failed to get driver information " + err}));
+            }else
+            {
+                if(result.length == 0)
+                {
+                    resolve(JSON.stringify({"result":"false"}));
+                }else{
+                    resolve(JSON.stringify({"result":"true", "ride_id":result[0].ride_id}));
+                }
+                
+            }
+        });
+    })
+}
+
+async function passengerNumbers(dbConnection, ride_id)
+{
+
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Passengers WHERE ride_id = ?`, [ride_id] ,(err, result) => {
+            if(err)
+            {
+                console.log(err);
+                reject(JSON.stringify({"error": "failed to get trip information " + err}));
+            }else
+            {
+                resolve(JSON.stringify({"number_Of_Passengers": result.length}));
+                
+                
+            }
+        });
+    })
 }
 
 async function getLocation(dbConnection, location_id)
@@ -785,6 +865,78 @@ async function updateUserDetails(dbConnection, user_id, email, first_name, last_
 
 }
 
+async function updateUserAmount(dbConnection, user_id, amount)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE accounts SET amount = ? WHERE userID = ?`, [amount, user_id] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
+async function updatePaymentDetails(dbConnection, paymentID)
+{
+
+    let date = new Date();
+
+    let start_time = "" + date.getDay() + "/" + date.getMonth() + ":" + date.getFullYear();
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`UPDATE payments SET paymentStatus = ?, dateCompleted = ? WHERE paymentID = ?`, ["Completed", start_time, paymentID] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(result);
+            }
+        });
+    });
+
+}
+
+async function getPaymentsThatMatchId(dbConnection, user_id)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`SELECT * FROM payments WHERE senderID = ? OR recieverID = ? ORDER BY paymentID DESC LIMIT 7`, [user_id, user_id] ,(err, result) => {
+            if(err)
+            {
+                reject(err);
+            }else
+            {
+                resolve(JSON.stringify({"Payments": result}));
+            }
+        });
+    });
+
+}
+
+async function getRideWithUser(dbConnection, user_id)
+{
+
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`SELECT * FROM Passengers WHERE user_id = ?`, [user_id] ,(err, result) => {
+            if(err)
+            {
+                reject(JSON.stringify({"Error":err}));
+            }else
+            {
+                resolve(JSON.stringify({"Users": result}));
+            }
+        });
+    });
+
+}
+
 module.exports = {
     createConnection,
     closeConnection,
@@ -827,4 +979,12 @@ module.exports = {
     addRequestToJoinRide,
     addUserAccount,
     getUserAccount,
+    getPaymentsThatMatchId,
+    getUserUsingUserName,
+    getPassengersRequestingRide,
+    getRideWithUser,
+    isDriverInRide,
+    passengerNumbers,
+    updateUserAmount,
+    updatePaymentDetails
 };

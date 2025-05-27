@@ -20,6 +20,26 @@ export async function updateLocationInformationUsingId(dbConnection, location_id
     }
 }
 
+export async function updateUserAccountAmount(dbConnection, user_id, amount)
+{
+    var result = await updateLocationById(dbConnection, location_id, name, min_x, min_y, max_x, max_y).catch((err) => {
+        console.log("There was an error updating record");
+        return err;
+    })
+
+    console.log(result);
+
+    if(("errno" in result))
+    {
+        return JSON.stringify({"Message": "There was an error updating the location information"});
+    }else if(result.affectedRows == 0)
+    {
+        return JSON.stringify({"Message": "Location Not Found"});
+    }else{
+        return JSON.stringify({"Message": "Location Updated"});
+    }
+}
+
 export async function updateLocationInformationUsingName(dbConnection, location_id, name, min_x, min_y, max_x, max_y)
 {
     var result = await updateLocationByName(dbConnection, name, min_x, min_y, max_x, max_y).catch((err) => {

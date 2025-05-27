@@ -1,6 +1,6 @@
 import {createServer} from "http";
 import {parse} from 'querystring';
-import { createConnection, addUser, closeConnection, getID, getIDFromUsername, getAllActiveRides } from "./db.js";
+import { createConnection, addUser, closeConnection, getID, getIDFromUsername, getAllActiveRides, getPaymentsThatMatchId, getUserUsingUserName, getPassengersRequestingRide, getRideWithUser, isDriverInRide, passengerNumbers, updateUserAmount } from "./db.js";
 import {welcomeUser, getUserInformation, createCodeForReset, getResetCode, getBookingsForUser, getVerifiedBookingsForUser, getDriverInformation, getAverageUserRatingInformation, getPassengersInRide, getLocationInformation, getRidesByIdInformation, getRidesByStartingLocationInformation, getRidesByEndingInformation, getRidesThroughLocationInformation, getDriverFromUserID, getUserUsingID, getUserAccountInformation} from "./getRequests.js";
 import {addUserToDatabase, updateUserPassword, initialisePayment, addDriverRecord, addBooking_UnVerified, verifyBookingRecord, addLocationRecord, addRideRecord, addPassengerRecord, addRatingRecord, makeRequestToTagAlong, addUserAccountToDatabase} from "./postRequests.js";
 import { sendResetCode, sendWelcomeEmail } from "./email.js";
@@ -126,6 +126,24 @@ var server = createServer( async (req, res) => {
             break;
         }
 
+        case "/getPassengersRequestingRide":
+        {
+            let queryParameters = req.url.split("?");
+            let queryParams = parse(queryParameters[1]);
+    
+            if(!("ride_id" in queryParams))
+            {
+                res.write(JSON.stringify({"Message": "Please provide ride_id"}));
+                res.end();
+                break;
+            }
+
+            let message = await getPassengersRequestingRide(databaseConnection, queryParams.ride_id);
+            res.write(message);
+            res.end()
+            break;
+        }
+
         case "/getActiveRides":
         {
             let message = await getAllActiveRides(databaseConnection);
@@ -241,6 +259,28 @@ var server = createServer( async (req, res) => {
             }
 
             break;
+        }
+
+        case "/getPaymentsForUser":
+        {
+
+            let queryParameters = req.url.split("?");
+            let queryParams = parse(queryParameters[1]);
+    
+            if(!("user_id" in queryParams))
+            {
+                res.write(JSON.stringify({"Message": "Please provide user_id"}));
+                res.end();
+                break;
+            }
+
+            console.log("User ID: " + queryParams.user_id);
+    
+            let message = await getPaymentsThatMatchId(databaseConnection, queryParams.user_id);
+            res.write(message);
+            res.end()
+            break;
+
         }
 
         case "/updateUserInformation":
@@ -585,6 +625,24 @@ var server = createServer( async (req, res) => {
             break;
         }
 
+        case "/getRideWithUserID":
+        {
+            let queryParameters = req.url.split("?");
+            let queryParams = parse(queryParameters[1]);
+    
+            if(!("user_id" in queryParams))
+            {
+                res.write(JSON.stringify({"Message": "Please provide user_id"}));
+                res.end();
+                break;
+            }
+    
+            let message = await getRideWithUser(databaseConnection, queryParams.user_id)
+            res.write(message);
+            res.end()
+            break;
+        }
+
         case "/getLocationInformation":
         {
             let queryParameters = req.url.split("?");
@@ -695,6 +753,48 @@ var server = createServer( async (req, res) => {
             }
 
             let message = await getVerifiedBookingsForUser(databaseConnection, parseInt(queryParams.user_id));
+
+            res.write(message);
+            res.end();
+
+            break;
+
+        }
+
+        case "/getPassengersInRide":
+        {
+            let queryParameters = req.url.split("?");
+            let queryParams = parse(queryParameters[1]);
+
+            if(!("ride_id" in queryParams))
+            {
+                res.write(JSON.stringify({"Message": "Please provide the ride_id"}));
+                res.end();
+                break;
+            }
+
+            let message = await passengerNumbers(databaseConnection, parseInt(queryParams.ride_id));
+
+            res.write(message);
+            res.end();
+
+            break;
+
+        }
+
+        case "/isDriverInActiveRide":
+        {
+            let queryParameters = req.url.split("?");
+            let queryParams = parse(queryParameters[1]);
+
+            if(!("user_id" in queryParams))
+            {
+                res.write(JSON.stringify({"Message": "Please provide the user_id"}));
+                res.end();
+                break;
+            }
+
+            let message = await isDriverInRide(databaseConnection, parseInt(queryParams.user_id));
 
             res.write(message);
             res.end();
@@ -830,6 +930,72 @@ var server = createServer( async (req, res) => {
                 res.end();
             }
 
+            break;
+        }
+
+        case "/updateUserAmount":
+        {
+            var info = await getData(req);
+            console.log(info);
+
+            let neccessary_fields = ["amount", "user_id"];
+            let missing_fields = [];
+            
+            for(let i = 0; i < neccessary_fields.length; i++)
+            {
+
+                if(!(neccessary_fields[i] in info))
+                {
+                    missing_fields.push(neccessary_fields[i]);
+                }
+            }
+
+            if(missing_fields.length != 0)
+            {
+                let message = "Please include: ";
+                for(let a = 0; a < missing_fields.length; a++)
+                {
+                    if(a == missing_fields.length - 1)
+                    {
+                        message += missing_fields[a];
+                    }else{
+                        message += missing_fields[a] + ", ";
+                    }
+                }
+
+                res.write(message);
+                res.end();
+            }else{
+
+                let user = JSON.parse(await getUserAccountInformation(info.user_id, databaseConnection));
+                var amount = 0;
+                
+                console.log(user);
+
+                if(!("Account" in user))
+                {
+                    return JSON.stringify({"error": "user doesn't exist"});
+                }else{
+                    amount = user.Account.amount + info.amount;
+                }
+
+                if(amount == 0)
+                {
+                    return JSON.stringify({"error": "There was am error updating user account information"});
+                }
+
+                let message = await updateUserAmount(databaseConnection, info.user_id, amount).then((result) => {
+                    if(("affectedRows" in result))
+                    {
+                        return JSON.stringify({"message": "Amount updated"});
+                    }else{
+                        return JSON.stringify({"error": "Failed to update amount"});
+                    }
+                })
+
+                res.write(message);
+                res.end();
+            }
             break;
         }
 
@@ -1034,38 +1200,18 @@ var server = createServer( async (req, res) => {
             var info = await getData(req);
             console.log(info);
 
-            if(!("sender_user_name" in info))
+            if(!("sender_user_id" in info))
             {
-                res.write(JSON.stringify({"message": "Please provide a value for the senderUserName"}))
+                res.write(JSON.stringify({"message": "Please provide a value for the sender_user_id"}))
                 res.end();
                 return;
             }
 
-            if(!("reciever_user_name" in info))
+            if(!("reciever_user_id" in info))
             {
-                res.write(JSON.stringify({"message": "Please provide a value for the recieverUserName"}))
+                res.write(JSON.stringify({"message": "Please provide a value for the reciever_user_id"}))
                 res.end();
                 return;
-            }
-
-            var senderID = await getIDFromUsername(databaseConnection, info.sender_user_name);
-            var recieverID = await getIDFromUsername(databaseConnection, info.reciever_user_name);
-
-            console.log(senderID);
-            console.log(recieverID);
-
-            if(senderID.length == 0)
-            {
-                res.write(JSON.stringify({"message": "Sender Not Registered in this system"}));
-                res.end();
-                break;
-            }
-
-            if(recieverID.length == 0)
-            {
-                res.write(JSON.stringify({"message": "Reciever Not Registered in the system"}));
-                res.end();
-                break;
             }
 
             if(!("amount" in info))
@@ -1079,14 +1225,14 @@ var server = createServer( async (req, res) => {
 
             if(!("reason" in info))
             {
-                res.write(JSON.stringify({"message": "Reason not present"}));
+                res.write(JSON.stringify({"message": "Please specify reason"}));
                 res.end();
                 break;
             }
 
             console.log(info.reason);
 
-            var success = await initialisePayment(senderID[0].id, recieverID[0].id, databaseConnection, info.amount, info.reason);
+            var success = await initialisePayment(info.sender_user_id, info.reciever_user_id, databaseConnection, info.amount, info.reason);
 
             res.write(success);
             res.end();
@@ -1156,6 +1302,28 @@ var server = createServer( async (req, res) => {
 
             break;
         }
+
+        case "/getUserAccountFromUserName":
+        {
+            var info = await getData(req);
+
+            console.log(info);
+
+            if(!("user_name" in info))
+            {
+                res.write(JSON.stringify({"Message": "Please provide a user_name"}));
+                res.end();
+                break;
+            }
+
+            var message = await getUserUsingUserName(databaseConnection, info.user_name)
+
+            res.write(message);
+            res.end();
+
+            break;
+        }
+
 
         case "/getUserAccount":
         {

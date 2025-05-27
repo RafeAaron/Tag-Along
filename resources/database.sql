@@ -18,9 +18,9 @@ CREATE TABLE IF NOT EXISTS User(
     role varchar(20)
 );
 
-INSERT INTO User VALUES(0, "rafeaaron21@gmail.com", "Rafe", "Aaron", "@rafeaaron23", 21 , "Male" , "Arthur@2025", "traveller/driver");
-INSERT INTO User VALUES(0, "michealronny@gmail.com", "Micheal", "Ronny", "@michealRonny", 24 , "Male" ,"michealRonny2024", "driver");
-INSERT INTO User VALUES(0, "tonyCroos@gmail.com", "Tonny", "Croos", "@tonnyCroos", 34 , "Male" ,"tonnyCroos2024", "driver");
+INSERT INTO User VALUES(0, "edrinehaines2@gmail.com", "Edrine", "Haines", "Edrine", 22 , "Female" ,"edrine2025", "traveller");
+INSERT INTO User VALUES(0, "rafeaaron21@gmail.com", "Rafe", "Aaron", "@rafeaaron23", 21 , "Male" , "Arthur@2025", "Traveller/Driver");
+INSERT INTO User VALUES(0, "michealronny@gmail.com", "Micheal", "Ronny", "@michealRonny", 24 , "Male" ,"michealRonny2024", "Driver");
 
 CREATE TABLE IF NOT EXISTS Driver(
 
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS payments(
     REFERENCES User(id)
 );
 
-INSERT INTO payments VALUES(0, 1, 2, 200, "Transport Fee", "Initiated", "2024-10-5");
+INSERT INTO payments VALUES(0, 1, 2, 200, "Transport Fee", "Initiated", "N/A");
 
 CREATE TABLE IF NOT EXISTS accounts(
 
@@ -128,8 +128,6 @@ CREATE TABLE IF NOT EXISTS Rides
 
 );
 
-INSERT INTO Rides VALUES (0, "Rwebikona", "Kakooba", "2.34356783", "7.54680397", "1 -> 5 -> 6 -> 3" , 5800, 1, "09:36", "N/A", "active");
-
 CREATE TABLE IF NOT EXISTS Location(
     location_id int PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(200) UNIQUE ,
@@ -151,8 +149,6 @@ CREATE TABLE IF NOT EXISTS Passengers(
     REFERENCES Rides(ride_id)
 
 ); 
-
-INSERT INTO Passengers VALUES (1, 1);
 
 CREATE TABLE IF NOT EXISTS Rating
 (
