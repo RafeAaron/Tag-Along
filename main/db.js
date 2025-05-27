@@ -73,7 +73,10 @@ async function addPassenger(dbConnection, user_id, ride_id)
                 reject(err);
             }else
             {
-                resolve(result);
+                dbConnection.query(`DELETE FROM RequestToJoinRide WHERE user_id = ?;`, [user_id], (err, result) => {
+                    if(err) reject(err);
+                    resolve(result);
+                })
             }
         });
     })
