@@ -1,6 +1,6 @@
 import {createServer} from "http";
 import {parse} from 'querystring';
-import { createConnection, addUser, closeConnection, getID, getIDFromUsername, getAllActiveRides, getPaymentsThatMatchId, getUserUsingUserName, getPassengersRequestingRide, getRideWithUser, isDriverInRide, passengerNumbers, updateUserAmount } from "./db.js";
+import { createConnection, addUser, closeConnection, getID, getIDFromUsername, getAllActiveRides, getPaymentsThatMatchId, getUserUsingUserName, getPassengersRequestingRide, getRideWithUser, isDriverInRide, passengerNumbers, updateUserAmount, getAllLocations } from "./db.js";
 import {welcomeUser, getUserInformation, createCodeForReset, getResetCode, getBookingsForUser, getVerifiedBookingsForUser, getDriverInformation, getAverageUserRatingInformation, getPassengersInRide, getLocationInformation, getRidesByIdInformation, getRidesByStartingLocationInformation, getRidesByEndingInformation, getRidesThroughLocationInformation, getDriverFromUserID, getUserUsingID, getUserAccountInformation} from "./getRequests.js";
 import {addUserToDatabase, updateUserPassword, initialisePayment, addDriverRecord, addBooking_UnVerified, verifyBookingRecord, addLocationRecord, addRideRecord, addPassengerRecord, addRatingRecord, makeRequestToTagAlong, addUserAccountToDatabase} from "./postRequests.js";
 import { sendResetCode, sendWelcomeEmail } from "./email.js";
@@ -60,6 +60,57 @@ var server = createServer( async (req, res) => {
     
     switch(baseurl)
     {
+
+        case "/getRouteDetails":
+        {
+
+            let queryParameters = req.url.split("?");
+            let queryParams = parse(queryParameters[1]);
+    
+            if(!("start_location" in queryParams))
+            {
+                res.write(JSON.stringify({"Message": "Please provide start_location"}));
+                res.end();
+                break;
+            }
+            if(!("end_location" in queryParams))
+            {
+                res.write(JSON.stringify({"Message": "Please provide end_location"}));
+                res.end();
+                break;
+            }
+
+            console.log("Start Location: " + queryParams.start_location);
+            console.log("End Location: " + queryParams.end_location);
+    
+            let details = location_mappings[start_location][end_location]
+
+            console.log(details)
+
+            if(details){
+                let message = JSON.stringify({"message": details});
+                res.write(message);
+                res.end();
+            }else{
+                let message = JSON.stringify({"error": "Location is undefined"});
+                res.write(message);
+                res.end();
+            }
+            break;
+
+        }
+
+        case "/getAllLocations":
+        {
+    
+            let message = await getAllLocations(databaseConnection);
+            res.write(message);
+            res.end();
+
+            console.log(message)
+
+            break;
+        }
 
         case "/requestToTagAlong":
         {

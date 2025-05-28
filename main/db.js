@@ -1,4 +1,5 @@
 const sqlData = require("mysql2");
+const { resolve } = require("path");
 
 const databaseHost = "localhost"
 const databasePort = "3306"
@@ -62,8 +63,59 @@ async function addRequestToJoinRide(dbConnection, user_id, ride_id, current_loca
 
 }
 
+async function numberOfPassengersInRide(dbConnection, ride_id)
+{
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Passengers WHERE ride_id = ?`, [ride_id], (err, result) =>{
+            if(err) {
+                console.log(err)
+                reject(err)};
+
+            resolve(result.length);
+        })
+
+    })
+}
+
+async function cateredForNumberOfPassengersInRide(dbConnection, ride_id)
+{
+    return new Promise((resolve, reject) => {
+
+        dbConnection.query(`SELECT * FROM Rides WHERE ride_id = ?`, [ride_id], (err, result) =>{
+            if(err){
+                console.log(err)
+                reject(err)
+
+            };
+            console.log(result);
+            resolve(result[0].number_Of_passengers);            
+        })
+
+    })
+}
+
+async function getAllLocations(dbConnection) {
+    return new Promise((resolve, reject) => {
+        dbConnection.query(`SELECT * FROM Location`, (err, result) => {
+            if(err) reject(JSON.stringify({"error":err}));
+
+            resolve(JSON.stringify({"Locations":result}))
+        })
+    })
+}
+
 async function addPassenger(dbConnection, user_id, ride_id)
 {
+
+    console.log(ride_id);
+    let cateredForPassengers = await cateredForNumberOfPassengersInRide(dbConnection, ride_id) + 1;
+    let current_number = await numberOfPassengersInRide(dbConnection, ride_id);
+
+    if(cateredForPassengers == current_number)
+    {
+        return({"errno": 1000});
+    }
 
     return new Promise((resolve, reject) => {
         dbConnection.query(`INSERT INTO Passengers VALUES(?, ?)`, [user_id, ride_id],(err, result) => {
@@ -989,5 +1041,6 @@ module.exports = {
     isDriverInRide,
     passengerNumbers,
     updateUserAmount,
-    updatePaymentDetails
+    updatePaymentDetails,
+    getAllLocations
 };

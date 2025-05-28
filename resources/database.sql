@@ -130,12 +130,17 @@ CREATE TABLE IF NOT EXISTS Rides
 
 CREATE TABLE IF NOT EXISTS Location(
     location_id int PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(200) UNIQUE ,
-    min_x VARCHAR(60),
-    min_y VARCHAR(60),
-    max_x VARCHAR(60),
-    max_y VARCHAR(60)
+    name VARCHAR(200) UNIQUE
 );
+
+INSERT INTO Location VALUES(0, "Rwebikona");
+INSERT INTO Location VALUES(0, "Mbarara University");
+INSERT INTO Location VALUES(0, "TASO Village");
+INSERT INTO Location VALUES(0, "Kakooba");
+INSERT INTO Location VALUES(0, "Kashanyarazi");
+INSERT INTO Location VALUES(0, "Boma");
+INSERT INTO Location VALUES(0, "MUST Hospital");
+INSERT INTO Location VALUES(0, "Amazon Building");
 
 CREATE TABLE IF NOT EXISTS Passengers(
 
@@ -150,21 +155,6 @@ CREATE TABLE IF NOT EXISTS Passengers(
 
 ); 
 
-CREATE TABLE IF NOT EXISTS Rating
-(
-    rating_id int AUTO_INCREMENT PRIMARY KEY,
-    user_id int,
-    ride_id int,
-    rating int,
-    comment VARCHAR(100),
-    date VARCHAR(20),
-
-    FOREIGN KEY(user_id)
-    REFERENCES User(id),
-    FOREIGN KEY(ride_id)
-    REFERENCES Rides(ride_id)
-);
-
 CREATE TABLE IF NOT EXISTS RequestToJoinRide(
     request_id int AUTO_INCREMENT PRIMARY KEY,
     ride_id int,
@@ -177,7 +167,3 @@ CREATE TABLE IF NOT EXISTS RequestToJoinRide(
     FOREIGN KEY(ride_id)
     REFERENCES Rides(ride_id)
 );
-
-INSERT INTO Rating VALUES(0, 2, 1, 4, "Very Wonderful Ride", "20/08/2025");
-INSERT INTO Rating VALUES(0, 2, 1, 2, "Poor Service", "20/08/2025");
-INSERT INTO Rating VALUES(0, 2, 1, 5, "Happy Wonderful Ride", "20/08/2025");
